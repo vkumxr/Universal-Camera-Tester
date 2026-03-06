@@ -25,6 +25,7 @@ color:white;
 .stream{
 flex:2;
 display:flex;
+flex-direction:column;
 justify-content:center;
 align-items:center;
 background:#0f2027;
@@ -34,6 +35,13 @@ background:#0f2027;
 width:90%;
 border-radius:15px;
 box-shadow:0 0 25px black;
+}
+
+.warning{
+margin-top:10px;
+color:#ff4d4d;
+font-weight:bold;
+font-size:18px;
 }
 
 .controls{
@@ -83,7 +91,11 @@ align-items:center;
 <div class="container">
 
 <div class="stream">
+
 <img id="stream">
+
+<div id="warning" class="warning"></div>
+
 </div>
 
 <div class="controls">
@@ -96,7 +108,6 @@ align-items:center;
 
 <hr>
 
-<!-- RESOLUTION -->
 <label>Resolution</label>
 <select onchange="updateValue('framesize',this.value)">
 <option value="10">UXGA</option>
@@ -109,8 +120,6 @@ align-items:center;
 <option value="3">HQVGA</option>
 <option value="0">QQVGA</option>
 </select>
-
-<!-- SLIDER TEMPLATE -->
 
 <script>
 
@@ -141,8 +150,6 @@ makeSlider("xclk",10,20);
 
 <hr>
 
-<!-- TOGGLES -->
-
 <div class="toggle">AWB <input type="checkbox" onchange="updateValue('awb',this.checked?1:0)"></div>
 <div class="toggle">AWB Gain <input type="checkbox" onchange="updateValue('awb_gain',this.checked?1:0)"></div>
 <div class="toggle">Auto Exposure Sensor <input type="checkbox" onchange="updateValue('aec',this.checked?1:0)"></div>
@@ -161,12 +168,27 @@ makeSlider("xclk",10,20);
 
 <script>
 
+let lastFrameTime=0;
+
 function startStream(){
+
 let base=document.location.origin.replace(/:\d+$/,'');
-document.getElementById("stream").src=base+":81/stream";
+let img=document.getElementById("stream");
+
+img.src=base+":81/stream";
+
+img.onload=function(){
+lastFrameTime=Date.now();
+document.getElementById("warning").innerText="";
+};
+
 }
 
-function stopStream(){document.getElementById("stream").src="";}
+function stopStream(){
+document.getElementById("stream").src="";
+document.getElementById("warning").innerText="";
+}
+
 function capture(){window.open("/capture");}
 
 function updateValue(v,val){
@@ -208,6 +230,21 @@ break;
 
 fetch(`/control?var=${variable}&val=${espValue}`);
 }
+
+setInterval(function(){
+
+if(lastFrameTime===0)return;
+
+let diff=Date.now()-lastFrameTime;
+
+if(diff>5000){
+
+document.getElementById("warning").innerText=
+"⚠ Camera connection lost or device powered off";
+
+}
+
+},2000);
 
 </script>
 
